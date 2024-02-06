@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ChatClient extends JFrame implements Runnable {
 
@@ -58,7 +60,8 @@ public class ChatClient extends JFrame implements Runnable {
             public void actionPerformed(ActionEvent e) {
                 try {
                     String message = inTextField.getText(); // Получение текста из поля ввода
-                    dataOutputStream.writeUTF(username + ": " + message); // Отправка сообщения на сервер
+                    String formattedMessage = getCurrentDateTime() + " " + username + ": " + message; // Добавление даты и времени к сообщению
+                    dataOutputStream.writeUTF(formattedMessage); // Отправка сообщения на сервер
                     dataOutputStream.flush(); // Принудительная очистка буфера вывода
                 } catch (IOException e1) {
                     e1.printStackTrace();
@@ -100,7 +103,12 @@ public class ChatClient extends JFrame implements Runnable {
         try {
             while (true) {
                 String line = dataInputStream.readUTF(); // Чтение сообщения от сервера
-                outTextArea.append(line + "\n"); // Вывод сообщения в область текста
+                String[] parts = line.split(" ", 2); // Разделение строки на две части: дату и сообщение
+                if (parts.length == 2) {
+                    String timestamp = parts[0]; // Получение временной метки
+                    String message = parts[1]; // Получение только сообщения
+                    outTextArea.append(timestamp + " " + message + "\n"); // Вывод сообщения в область текста
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -109,5 +117,17 @@ public class ChatClient extends JFrame implements Runnable {
             validate(); // Перерисовка окна
         }
     }
+
+    // Метод для получения текущего времени и даты
+    private String getCurrentDateTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // Формат времени и даты
+        Date now = new Date(); // Текущая дата и время
+        return sdf.format(now); // Возвращаем отформатированную строку времени и даты
+    }
 }
+
+
+
+
+
 
