@@ -17,7 +17,7 @@ public class ChatClient extends JFrame implements Runnable {
 
     // Конструктор класса
     public ChatClient(Socket socket, DataInputStream dataInputStream, DataOutputStream dataOutputStream, String username) {
-        super("Client"); // Установка заголовка окна
+        super("Chat Client - " + username); // Установка заголовка окна
         this.socket = socket;
         this.dataInputStream = dataInputStream;
         this.dataOutputStream = dataOutputStream;
@@ -110,3 +110,4 @@ public class ChatClient extends JFrame implements Runnable {
         }
     }
 }
+
