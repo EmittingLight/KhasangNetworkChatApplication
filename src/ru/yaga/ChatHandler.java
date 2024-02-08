@@ -15,6 +15,9 @@ public class ChatHandler extends Thread {
     private static List<ChatHandler> handlers = Collections.synchronizedList(new ArrayList<>()); // Список обработчиков чатов
     private String username; // Имя пользователя
 
+    // Путь к файлу с именами пользователей
+    private static final String USERS_FILE = "users.txt";
+
     // Конструктор класса
     public ChatHandler(Socket socket) throws IOException {
         this.socket = socket;
@@ -23,6 +26,7 @@ public class ChatHandler extends Thread {
 
         // Аутентификация пользователя
         this.username = dataInputStream.readUTF(); // Чтение имени пользователя от клиента
+        saveUsernameToFile(this.username); // Сохранение имени пользователя в файл
     }
 
     // Переопределенный метод run интерфейса Runnable
@@ -67,5 +71,30 @@ public class ChatHandler extends Thread {
                 }
             }
         }
+    }
+
+    // Метод для сохранения имени пользователя в файл
+    private void saveUsernameToFile(String username) {
+        try (FileWriter fileWriter = new FileWriter(USERS_FILE, true);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+             PrintWriter printWriter = new PrintWriter(bufferedWriter)) {
+            int userCount = getUserCount();
+            printWriter.println((userCount + 1) + ":" + username);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Метод для получения текущего количества пользователей
+    private int getUserCount() {
+        int userCount = 0;
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(USERS_FILE))) {
+            while (bufferedReader.readLine() != null) {
+                userCount++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return userCount;
     }
 }
