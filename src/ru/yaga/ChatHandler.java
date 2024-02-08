@@ -17,6 +17,8 @@ public class ChatHandler extends Thread {
 
     // Путь к файлу с именами пользователей
     private static final String USERS_FILE = "users.txt";
+    // Путь к файлу с сообщениями
+    private static final String MESSAGES_FILE = "messages.txt";
 
     // Конструктор класса
     public ChatHandler(Socket socket) throws IOException {
@@ -71,6 +73,7 @@ public class ChatHandler extends Thread {
                 }
             }
         }
+        saveMessageToFile(message); // Сохранение сообщения в файл
     }
 
     // Метод для сохранения имени пользователя в файл
@@ -97,4 +100,16 @@ public class ChatHandler extends Thread {
         }
         return userCount;
     }
+
+    // Метод для сохранения сообщения в файл
+    private void saveMessageToFile(String message) {
+        try (FileWriter fileWriter = new FileWriter(MESSAGES_FILE, true);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+             PrintWriter printWriter = new PrintWriter(bufferedWriter)) {
+            printWriter.println(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
+
