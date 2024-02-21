@@ -42,8 +42,32 @@ public class ChatClient extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selectedUser = (String) userComboBox.getSelectedItem();
+                if (selectedUser != null && !selectedUser.isEmpty()) {
+                    // Получаем текст сообщения для отправки
+                    String message = JOptionPane.showInputDialog(null, "Введите сообщение для " + selectedUser + ":");
+
+                    // Формируем приватное сообщение
+                    if (message != null && !message.isEmpty()) {
+                        String formattedMessage = getCurrentDateTime() + " " + username + " (ЛС для " + selectedUser + "): " + message;
+
+                        try {
+                            // Отправка приватного сообщения на сервер
+                            if (selectedUser.equals("All")) {
+                                // Отправка всем пользователям
+                                dataOutputStream.writeUTF(formattedMessage);
+                            } else {
+                                // Отправка конкретному пользователю
+                                dataOutputStream.writeUTF("PRIVATE_MESSAGE:" + selectedUser + ":" + formattedMessage);
+                            }
+                            dataOutputStream.flush();
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
             }
         });
+
 
         // Отображение списка пользователей в выпадающем списке
         displayUserList(this.userComboBox);

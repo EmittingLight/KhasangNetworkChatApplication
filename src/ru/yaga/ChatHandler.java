@@ -64,16 +64,47 @@ public class ChatHandler extends Thread {
                 ChatHandler chatHandler = iterator.next();
                 try {
                     synchronized (chatHandler.dataOutputStream) {
-                        chatHandler.dataOutputStream.writeUTF(message); // Отправка сообщения клиенту
+                        // Отправка сообщения клиенту только если это не приватное сообщение
+                        if (!message.startsWith("PRIVATE_MESSAGE")) {
+                            chatHandler.dataOutputStream.writeUTF(message);
+                            chatHandler.dataOutputStream.flush();
+                        }
                     }
-                    chatHandler.dataOutputStream.flush(); // Принудительная очистка буфера вывода
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
         saveMessageToFile(message); // Сохранение сообщения в файл
+
+        // Обработка приватных сообщений
+        if (message.startsWith("PRIVATE_MESSAGE")) {
+            String[] parts = message.split(":", 4);
+            if (parts.length == 4) {
+                String targetUser = parts[1];
+                String privateMessage = parts[3];
+
+                // Найти обработчика для целевого пользователя
+                synchronized (handlers) {
+                    for (ChatHandler handler : handlers) {
+                        if (handler.username.equals(targetUser)) {
+                            try {
+                                synchronized (handler.dataOutputStream) {
+                                    // Отправка приватного сообщения только целевому пользователю
+                                    handler.dataOutputStream.writeUTF(privateMessage);
+                                    handler.dataOutputStream.flush();
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
+
 
     // Метод для сохранения имени пользователя в файл
     private void saveUsernameToFile(String username) {
