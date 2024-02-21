@@ -78,7 +78,7 @@ public class ChatClient extends JFrame {
     //Метод, выполняющий фоновые операции, читая данные от сервера в бесконечном цикле.
     private class ChatWorker extends SwingWorker<Void, String> {
         @Override
-        protected Void doInBackground() throws Exception {
+        protected Void doInBackground() {
             try {
                 while (true) {
                     // Чтение строки от сервера и публикация для отображения в главном потоке
