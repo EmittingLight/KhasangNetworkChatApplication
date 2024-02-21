@@ -8,6 +8,8 @@ import java.io.*;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatClient extends JFrame {
     // Сокет для соединения с сервером
@@ -23,6 +25,9 @@ public class ChatClient extends JFrame {
     // Имя пользователя
     private final String username;
 
+    // Путь к файлу с именами пользователей
+    private static final String USERS_FILE = "users.txt";
+
     // Конструктор класса
     public ChatClient(Socket socket, DataInputStream dataInputStream, DataOutputStream dataOutputStream, String username) {
         super("Chat Client - " + username);
@@ -35,6 +40,25 @@ public class ChatClient extends JFrame {
         setSize(400, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        // Создание выпадающего списка пользователей
+        JComboBox<String> userComboBox = new JComboBox<>();
+        add(BorderLayout.NORTH, userComboBox);
+
+        // Обработчик события выбора пользователя из списка
+        userComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Действия при выборе пользователя из списка
+                String selectedUser = (String) userComboBox.getSelectedItem();
+            }
+        });
+
+        // Отображение списка пользователей в выпадающем списке
+        displayUserList(userComboBox);
+
+        // Вызов метода для обновления списка пользователей
+        updateUserList(userComboBox);
 
         // Создание области вывода сообщений
         outTextPane = new JTextPane();
@@ -73,6 +97,60 @@ public class ChatClient extends JFrame {
 
         // Запуск фонового потока для чтения сообщений от сервера
         new ChatWorker().execute();
+
+        // Вызов метода для запуска потока обновления списка пользователей
+        startUserListUpdater(userComboBox);
+    }
+
+    // Метод для отображения выпадающего списка пользователей
+    private void displayUserList(JComboBox<String> userComboBox) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(USERS_FILE))) {
+            List<String> userList = new ArrayList<>();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                userList.add(line.split(":")[1]); // Получение имени пользователя из строки
+            }
+
+            // Отображение списка пользователей в выпадающем списке
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(userList.toArray(new String[0]));
+            userComboBox.setModel(model);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Метод для обновления списка пользователей
+    private void updateUserList(JComboBox<String> userComboBox) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(USERS_FILE))) {
+            List<String> userList = new ArrayList<>();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                userList.add(line.split(":")[1]); // Получение имени пользователя из строки
+            }
+
+            // Обновление списка в выпадающем списке
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(userList.toArray(new String[0]));
+            userComboBox.setModel(model);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Метод для запуска потока обновления списка пользователей
+    private void startUserListUpdater(JComboBox<String> userComboBox) {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    // Задержка перед обновлением списка (каждые 10 секунд)
+                    Thread.sleep(10000);
+
+                    // Обновление списка пользователей
+                    updateUserList(userComboBox);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     //Метод, выполняющий фоновые операции, читая данные от сервера в бесконечном цикле.
@@ -99,7 +177,6 @@ public class ChatClient extends JFrame {
         @Override
         protected void process(java.util.List<String> chunks) {
             for (String line : chunks) {
-                // Добавление стилизованного сообщения в область вывода
                 appendStyledMessage(line);
             }
         }
@@ -173,6 +250,5 @@ public class ChatClient extends JFrame {
         }
     }
 }
-
 
 
