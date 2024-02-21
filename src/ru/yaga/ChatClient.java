@@ -12,21 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatClient extends JFrame {
-    // Сокет для соединения с сервером
     private final Socket socket;
-    // Поток ввода данных от сервера
     private final DataInputStream dataInputStream;
-    // Поток вывода данных к серверу
     private final DataOutputStream dataOutputStream;
-    // Область вывода сообщений от сервера
     private final JTextPane outTextPane;
-    // Поле ввода сообщений пользователем
     private final JTextField inTextField;
-    // Имя пользователя
     private final String username;
-
-    // Путь к файлу с именами пользователей
     private static final String USERS_FILE = "users.txt";
+    private JComboBox<String> userComboBox;
 
     // Конструктор класса
     public ChatClient(Socket socket, DataInputStream dataInputStream, DataOutputStream dataOutputStream, String username) {
@@ -36,29 +29,37 @@ public class ChatClient extends JFrame {
         this.dataOutputStream = dataOutputStream;
         this.username = username;
 
-        // Настройка окна приложения
         setSize(400, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         // Создание выпадающего списка пользователей
-        JComboBox<String> userComboBox = new JComboBox<>();
-        add(BorderLayout.NORTH, userComboBox);
+        this.userComboBox = new JComboBox<>();
+        add(BorderLayout.NORTH, this.userComboBox);
 
         // Обработчик события выбора пользователя из списка
-        userComboBox.addActionListener(new ActionListener() {
+        this.userComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Действия при выборе пользователя из списка
                 String selectedUser = (String) userComboBox.getSelectedItem();
             }
         });
 
         // Отображение списка пользователей в выпадающем списке
-        displayUserList(userComboBox);
+        displayUserList(this.userComboBox);
+
+        // Добавляем обработчик события закрытия окна
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Вызываем метод удаления пользователя из файла при закрытии окна
+                removeUserFromFile(username, userComboBox);
+                super.windowClosing(e);
+            }
+        });
 
         // Вызов метода для обновления списка пользователей
-        updateUserList(userComboBox);
+        updateUserList(this.userComboBox);
 
         // Создание области вывода сообщений
         outTextPane = new JTextPane();
@@ -155,6 +156,7 @@ public class ChatClient extends JFrame {
 
     //Метод, выполняющий фоновые операции, читая данные от сервера в бесконечном цикле.
     private class ChatWorker extends SwingWorker<Void, String> {
+        // В методе ChatWorker, после блока finally
         @Override
         protected Void doInBackground() {
             try {
@@ -166,9 +168,18 @@ public class ChatClient extends JFrame {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                // Скрытие поля ввода и перерисовка окна при завершении
+                // Скрытие поля ввода, перерисовка окна и удаление пользователя из файла при завершении
                 inTextField.setVisible(false);
                 validate();
+                removeUserFromFile(username, userComboBox);
+
+                // Закрытие сокета и завершение приложения
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                System.exit(0);
             }
             return null;
         }
@@ -245,6 +256,48 @@ public class ChatClient extends JFrame {
 
             // Создание объекта клиента
             new ChatClient(socket, dataInputStream, dataOutputStream, username);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Метод для удаления пользователя из файла
+    private void removeUserFromFile(String username, JComboBox<String> userComboBox) {
+        try {
+            // Создание временного файла
+            File tempFile = new File("temp_users.txt");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+
+            BufferedReader reader = new BufferedReader(new FileReader(USERS_FILE));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Если строка содержит имя пользователя, пропускаем ее
+                if (line.contains(username)) {
+                    continue;
+                }
+                // Записываем остальные строки во временный файл
+                writer.write(line + "\n");
+            }
+            reader.close();
+            writer.close();
+
+            // Копирование содержимого временного файла в исходный файл
+            try (FileInputStream inputStream = new FileInputStream(tempFile);
+                 FileOutputStream outputStream = new FileOutputStream(USERS_FILE)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = inputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, length);
+                }
+            }
+
+            // Удаление временного файла
+            if (!tempFile.delete()) {
+                System.out.println("Не удалось удалить временный файл");
+            }
+
+            // Обновление списка пользователей в выпадающем списке
+            displayUserList(userComboBox);
         } catch (IOException e) {
             e.printStackTrace();
         }
