@@ -6,7 +6,7 @@ import java.net.Socket;
 import javax.swing.JOptionPane;
 
 public class ChatServer {
-    private static final int MAX_USERS = 5;
+    private static final int MAX_USERS = 3;
     private static int connectedUsers = 0;
 
     public static synchronized void incrementConnectedUsers() {

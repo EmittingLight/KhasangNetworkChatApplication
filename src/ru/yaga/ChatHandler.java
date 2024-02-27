@@ -1,5 +1,6 @@
 package ru.yaga;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ public class ChatHandler extends Thread {
     DataOutputStream dataOutputStream; // Поток вывода данных к клиенту
     private static List<ChatHandler> handlers = Collections.synchronizedList(new ArrayList<>()); // Список обработчиков чатов
     private String username; // Имя пользователя
+
+    private static final String FORBIDDEN_WORDS_FILE = "forbidden_words.txt";
 
     // Путь к файлу с именами пользователей
     private static final String USERS_FILE = "users.txt";
@@ -29,28 +32,49 @@ public class ChatHandler extends Thread {
         this.username = dataInputStream.readUTF(); // Чтение имени пользователя от клиента
         saveUsernameToFile(this.username); // Сохранение имени пользователя в файл
     }
-
+    // Метод для проверки наличия запрещенных слов в сообщении
+    private boolean hasForbiddenWords(String message) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(FORBIDDEN_WORDS_FILE))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (message.toLowerCase().contains(line.toLowerCase())) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
     // Переопределенный метод run интерфейса Runnable
     @Override
     public void run() {
-        handlers.add(this); // Добавление текущего обработчика в список
+        handlers.add(this);
+
         try {
             while (true) {
-                String message = dataInputStream.readUTF(); // Чтение сообщения от клиента
-                broadcast(message); // Рассылка сообщения всем клиентам
+                String message = dataInputStream.readUTF();
+
+                // Проверка наличия запрещенных слов
+                if (hasForbiddenWords(message)) {
+                    JOptionPane.showMessageDialog(null, "Ваше сообщение содержит запрещенные слова. Соединение будет разорвано.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                    break;
+                }
+
+                broadcast(message);
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            handlers.remove(this); // Удаление текущего обработчика из списка
-            ChatServer.decrementConnectedUsers(); // Уменьшаем счетчик подключенных пользователей
+            handlers.remove(this);
+            ChatServer.decrementConnectedUsers();
             try {
-                dataOutputStream.close(); // Закрытие потока вывода данных
+                dataOutputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             try {
-                socket.close(); // Закрытие сокета
+                socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
