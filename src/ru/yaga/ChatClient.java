@@ -68,6 +68,27 @@ public class ChatClient extends JFrame {
             }
         });
 
+        // Создание кнопки "Send"
+        JButton sendButton = new JButton("Send");
+
+        // Создание поля ввода сообщений
+        inTextField = new JTextField();
+
+        // Обработчик события для кнопки "Send"
+        sendButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMessage(); // Вызываем метод отправки сообщения при нажатии на кнопку
+            }
+        });
+
+        // Размещение кнопки "Send" рядом с текстовым полем ввода
+        JPanel inputPanel = new JPanel(new BorderLayout());
+        inputPanel.add(inTextField, BorderLayout.CENTER);
+        inputPanel.add(sendButton, BorderLayout.EAST);
+
+        // Добавление панели с текстовым полем ввода и кнопкой "Send"
+        add(BorderLayout.SOUTH, inputPanel);
 
         // Отображение списка пользователей в выпадающем списке
         displayUserList(this.userComboBox);
@@ -90,28 +111,11 @@ public class ChatClient extends JFrame {
         outTextPane.setEditable(false);
         add(new JScrollPane(outTextPane));
 
-        // Создание поля ввода сообщений
-        inTextField = new JTextField();
-        add(BorderLayout.SOUTH, inTextField);
-
         // Обработчик события ввода текста пользователем
         inTextField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    // Получение текста сообщения и его форматирование
-                    String message = inTextField.getText();
-                    String formattedMessage = getCurrentDateTime() + " " + username + ": " + message;
-
-                    // Отправка сообщения на сервер
-                    dataOutputStream.writeUTF(formattedMessage);
-                    dataOutputStream.flush();
-
-                    // Очистка поля ввода
-                    inTextField.setText("");
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+                sendMessage(); // Вызываем метод отправки сообщения при нажатии Enter в текстовом поле
             }
         });
 
@@ -126,6 +130,27 @@ public class ChatClient extends JFrame {
         // Вызов метода для запуска потока обновления списка пользователей
         startUserListUpdater(userComboBox);
     }
+
+    // Метод для отправки сообщения на сервер
+    private void sendMessage() {
+        try {
+            // Получение текста сообщения из текстового поля
+            String message = inTextField.getText();
+            if (!message.isEmpty()) {
+                String formattedMessage = getCurrentDateTime() + " " + username + ": " + message;
+
+                // Отправка сообщения на сервер
+                dataOutputStream.writeUTF(formattedMessage);
+                dataOutputStream.flush();
+
+                // Очистка поля ввода
+                inTextField.setText("");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
 
     // Метод для отображения выпадающего списка пользователей
     private void displayUserList(JComboBox<String> userComboBox) {
