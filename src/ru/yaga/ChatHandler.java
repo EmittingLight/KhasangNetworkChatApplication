@@ -43,6 +43,7 @@ public class ChatHandler extends Thread {
             e.printStackTrace();
         } finally {
             handlers.remove(this); // Удаление текущего обработчика из списка
+            ChatServer.decrementConnectedUsers(); // Уменьшаем счетчик подключенных пользователей
             try {
                 dataOutputStream.close(); // Закрытие потока вывода данных
             } catch (IOException e) {
