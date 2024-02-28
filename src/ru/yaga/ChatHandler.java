@@ -107,7 +107,7 @@ public class ChatHandler extends Thread {
             String[] parts = message.split(":", 4);
             if (parts.length == 4) {
                 String targetUser = parts[1];
-                String privateMessage = parts[3];
+                String privateMessage = parts[2] + ":" + parts[3];
 
                 // Найти обработчика для целевого пользователя
                 synchronized (handlers) {
@@ -129,7 +129,6 @@ public class ChatHandler extends Thread {
             }
         }
     }
-
 
     // Метод для сохранения имени пользователя в файл
     private void saveUsernameToFile(String username) {
