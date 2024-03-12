@@ -102,14 +102,14 @@ public class ChatHandler extends Thread {
         }
         saveMessageToFile(message); // Сохранение сообщения в файл
 
-        // Обработка приватных сообщений
+        /// Обработка приватных сообщений
         if (message.startsWith("PRIVATE_MESSAGE")) {
             String[] parts = message.split(":", 4);
             if (parts.length == 4) {
                 String targetUser = parts[1];
                 String privateMessage = parts[2] + ":" + parts[3];
 
-                // Проверка, чтобы избежать отправки приватного сообщения самому себе
+                // Добавил проверку, чтобы избежать отправки приватного сообщения самому себе
                 if (!targetUser.equals(username)) {
                     // Найти обработчика для целевого пользователя
                     synchronized (handlers) {
@@ -128,6 +128,11 @@ public class ChatHandler extends Thread {
                             }
                         }
                     }
+                } else {
+                    // Окно с предупреждением когда пользователь пытается отправить приватное сообщение самому себе
+                    SwingUtilities.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(null, "Вы не можете отправить приватное сообщение самому себе.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                    });
                 }
             }
         }
