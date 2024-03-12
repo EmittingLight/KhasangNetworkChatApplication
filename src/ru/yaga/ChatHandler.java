@@ -109,20 +109,23 @@ public class ChatHandler extends Thread {
                 String targetUser = parts[1];
                 String privateMessage = parts[2] + ":" + parts[3];
 
-                // Найти обработчика для целевого пользователя
-                synchronized (handlers) {
-                    for (ChatHandler handler : handlers) {
-                        if (handler.username.equals(targetUser)) {
-                            try {
-                                synchronized (handler.dataOutputStream) {
-                                    // Отправка приватного сообщения только целевому пользователю
-                                    handler.dataOutputStream.writeUTF(privateMessage);
-                                    handler.dataOutputStream.flush();
+                // Проверка, чтобы избежать отправки приватного сообщения самому себе
+                if (!targetUser.equals(username)) {
+                    // Найти обработчика для целевого пользователя
+                    synchronized (handlers) {
+                        for (ChatHandler handler : handlers) {
+                            if (handler.username.equals(targetUser)) {
+                                try {
+                                    synchronized (handler.dataOutputStream) {
+                                        // Отправка приватного сообщения только целевому пользователю
+                                        handler.dataOutputStream.writeUTF(privateMessage);
+                                        handler.dataOutputStream.flush();
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                break;
                             }
-                            break;
                         }
                     }
                 }
