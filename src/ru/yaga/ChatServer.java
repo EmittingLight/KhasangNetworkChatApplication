@@ -6,7 +6,7 @@ import java.net.Socket;
 import javax.swing.JOptionPane;
 
 public class ChatServer {
-    private static final int MAX_USERS = 3;
+    private static final int MAX_USERS = 5;
     private static int connectedUsers = 0;
 
     public static synchronized void incrementConnectedUsers() {
@@ -34,7 +34,7 @@ public class ChatServer {
                     ChatHandler chatHandler = new ChatHandler(socket); // Создание обработчика чата для клиента
                     chatHandler.start(); // Запуск потока обработчика чата
                 } else {
-                    JOptionPane.showMessageDialog(null, "Достигнуто максимальное количество пользователей (3).", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Достигнуто максимальное количество пользователей (5).", "Предупреждение", JOptionPane.WARNING_MESSAGE);
                     socket.close(); // Закрываем сокет, так как максимальное количество пользователей достигнуто
                 }
             }
