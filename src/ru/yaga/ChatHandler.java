@@ -102,22 +102,40 @@ public class ChatHandler extends Thread {
         }
         saveMessageToFile(message); // Сохранение сообщения в файл
 
-        /// Обработка приватных сообщений
+        // Обработка приватных сообщений
         if (message.startsWith("PRIVATE_MESSAGE")) {
             String[] parts = message.split(":", 4);
             if (parts.length == 4) {
                 String targetUser = parts[1];
                 String privateMessage = parts[2] + ":" + parts[3];
 
-                // Добавил проверку, чтобы избежать отправки приватного сообщения самому себе
-                if (!targetUser.equals(username)) {
-                    // Найти обработчика для целевого пользователя
-                    synchronized (handlers) {
+                synchronized (handlers) {
+                    // Проверка, чтобы избежать отправки приватного сообщения самому себе
+                    boolean sentToSelf = targetUser.equals(username);
+
+                    for (ChatHandler handler : handlers) {
+                        if (handler.username.equals(targetUser)) {
+                            try {
+                                synchronized (handler.dataOutputStream) {
+                                    // Отправка приватного сообщения только целевому пользователю
+                                    if (!sentToSelf) {
+                                        handler.dataOutputStream.writeUTF(privateMessage);
+                                        handler.dataOutputStream.flush();
+                                    }
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        }
+                    }
+
+                    // Отправка копии приватного сообщения обратно отправителю, если не отправлено самому себе
+                    if (!sentToSelf) {
                         for (ChatHandler handler : handlers) {
-                            if (handler.username.equals(targetUser)) {
+                            if (handler.username.equals(username)) {
                                 try {
                                     synchronized (handler.dataOutputStream) {
-                                        // Отправка приватного сообщения только целевому пользователю
                                         handler.dataOutputStream.writeUTF(privateMessage);
                                         handler.dataOutputStream.flush();
                                     }
@@ -128,17 +146,19 @@ public class ChatHandler extends Thread {
                             }
                         }
                     }
-                } else {
-                    // Окно с предупреждением когда пользователь пытается отправить приватное сообщение самому себе
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(null, "Вы не можете отправить приватное сообщение самому себе.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
-                    });
+
+                    // Если сообщение отправлено самому себе, показать предупреждение
+                    if (sentToSelf) {
+                        SwingUtilities.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(null, "Вы не можете отправить приватное сообщение самому себе.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                        });
+                    }
                 }
             }
         }
     }
 
-    // Метод для сохранения имени пользователя в файл
+        // Метод для сохранения имени пользователя в файл
     private void saveUsernameToFile(String username) {
         try (FileWriter fileWriter = new FileWriter(USERS_FILE, true);
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
